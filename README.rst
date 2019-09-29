@@ -5,7 +5,8 @@ This originally comes from Greg Lavino, and then "Image Processing for Electroni
 
 Now it can be used to generate map coordinate rectangles for use with the zoned cleaning function for Xiaomi roborock v1/v2 robots. Simply run the program on a navmap PPM file and draw the zones that you want coordinates for. Then copy the output into your software of choice (hassio, miiocli, etc)
 
-
+.. image:: https://raw.githubusercontent.com/neontty/python-cropper-tk/master/xiaomi_navmap_example.png
+	   
 Old Readme
 ==========
 

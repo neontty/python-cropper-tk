@@ -13,8 +13,7 @@ Note the following packages are required:
  python-imaging-tk
 '''
 
-import Image
-import ImageTk
+from PIL import Image, ImageTk
 try:
     # for Python2
     import Tkinter as tk
@@ -28,7 +27,7 @@ import os
 PROGNAME = 'Cropper-Tk'
 VERSION = '0.20180524'
 
-thumbsize = 896, 608
+thumbsize = 1024,1024
 thumboffset = 16
 
 class CreateToolTip(object):
@@ -105,10 +104,12 @@ class Application(tk.Frame):
 
         if not(filename):
             filenames = tkFileDialog.askopenfilenames(master=self,
-                          defaultextension='.jpg', multiple=1, parent=self,
+                          defaultextension='.ppm', multiple=1, parent=self,
                           filetypes=(
                               (('Image Files'),
-                               '.jpg .JPG .jpeg .JPEG .png .PNG .tif .TIF .tiff .TIFF'),
+                               '.ppm .PPM .jpg .JPG .jpeg .JPEG .png .PNG .tif .TIF .tiff .TIFF'),
+                              (('PPM Image Files'),
+                               '.ppm .PPM'),
                               (('JPEG Image Files'),
                                '.jpg .JPG .jpeg .JPEG'),
                               (('PNG Image Files'),
@@ -222,6 +223,42 @@ class Application(tk.Frame):
             self.crop_rects.append(ra)
             self.n = self.n + 1
 
+    def zoom_ignore_dead_space(self):
+        gray_color = [125, 125, 125]
+        self.zoommode = True
+        import numpy as np
+        data = np.asarray(self.image.getdata()).reshape((self.w, self.h, 3))
+
+        start_row = 0
+        start_col = 0
+        end_row = 0
+        end_col = 0
+
+        # count up and find first non-gray occurence of a pixel row
+        for row in range(0, self.h):
+            if np.any(data[row, :, :] != gray_color):
+                start_row = row
+                break
+        # count down and find first non-gray occurence of a pixel row
+        for row in range(self.h - 1, 0, -1):
+            if np.any(data[row, :, :] != gray_color):
+                end_row = row
+                break
+        # count right and find first non-gray occurence of a pixel col
+        for col in range(0, self.w):
+            if np.any(data[:, col, :] != gray_color):
+                start_col = col
+                break
+        # count left and find first non-gray occurence of a pixel col
+        for col in range(self.w - 1, 0, -1):
+            if np.any(data[:, col, :] != gray_color):
+                end_col = col
+                break
+
+        self.croprect_start = [start_row, start_col]
+        self.croprect_end = [end_row, end_col]
+        self.set_crop_area()
+
     def zoom_mode(self):
         if self.zoommode:
             self.zoommode = False
@@ -301,7 +338,7 @@ class Application(tk.Frame):
     def loadimage(self):
 
         self.image = Image.open(self.filename)
-        print self.image.size
+        #print self.image.size
         self.image_rect = Rect(self.image.size)
         self.w = self.image_rect.w
         self.h = self.image_rect.h
@@ -316,23 +353,39 @@ class Application(tk.Frame):
         y_scale = float(self.image_rect.h) / self.image_thumb_rect.h
         self.scale = (x_scale, y_scale)
 
+        # force rotation for correct coordinates
+        #self.image = self.image.rotate(90)
+
+        # we will zoom in to cut out dead area.
+        self.zoom_ignore_dead_space()
+
+
     def newfilename(self, filenum):
         f, e = os.path.splitext(self.filename)
         return '%s__crop__%s%s' % (f, filenum, e)
 
     def start_cropping(self):
         cropcount = 0
+        coord_list = []
         for croparea in self.crop_rects:
             cropcount += 1
-            f = self.newfilename(cropcount)
-            print f, croparea
-            self.crop(croparea, f)
+            #print croparea
+            coord_list.append(self.crop(croparea))
+        print(str(coord_list).replace(" ",""))
         self.quit()
 
-    def crop(self, croparea, filename):
-        ca = (croparea.left, croparea.top, croparea.right, croparea.bottom)
-        newimg = self.image.crop(ca)
-        newimg.save(filename)
+    def croparea_to_xiaomi_coords(self, croparea):
+        ca = map(int, (croparea.left / float(self.w) * 51000,
+                       (1 - (croparea.bottom / float(self.h))) * 51000,
+                       croparea.right / float(self.w) * 51000,
+                       (1 - (croparea.top / float(self.h))) * 51000,
+                       ))
+        return ca
+
+    def crop(self, croparea):
+        #ca = (croparea.left, croparea.top, croparea.right, croparea.bottom)
+        ca = self.croparea_to_xiaomi_coords(croparea)
+        return ca
 
 
 class Rect(object):

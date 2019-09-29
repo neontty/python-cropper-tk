@@ -1,6 +1,14 @@
 What is it
 ==========
 
+This originally comes from Greg Lavino, and then "Image Processing for Electronic Publications" and was intended to crop images quickly.
+
+Now it can be used to generate map coordinate rectangles for use with the zoned cleaning function for Xiaomi roborock v1/v2 robots. Simply run the program on a navmap PPM file and draw the zones that you want coordinates for. Then copy the output into your software of choice (hassio, miiocli, etc)
+
+
+Old Readme
+==========
+
 This is a copy of Greg Lavino's awesome `photo_splitter.py`, with some
 minor adjustments by myself.
 
@@ -25,17 +33,17 @@ CropperTktoPDF
 Installation
 ============
 
-Before you can run `photo_splitter.py`, you'll need to install these
+Before you can run `croppertk.py`, you'll need to install these
 libraries::
 
-  sudo apt-get install python-tk python-imaging python-imaging-tk python-reportlab
+  sudo apt-get install python-tk python-pil python-imaging-tk python-reportlab
 
 Run
 ===
 
 An example::
 
-  ./croppertk.py dog.jpg
+  ./croppertk.py navmap.ppm
 
 or::
 
